@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
+
+</head>
+<body>
+
+
+<script>
+
+    $(document).ready(function(){
+
+        console.log("안녕")
+
+        $.ajax({
+            url:"http://localhost:8080/sample/gettest",
+            type:"GET",
+            dataType: "json",
+            contentType: "application/json",
+            success: function(data) {
+                console.log("ajax호출 성공 ")
+                console.log(data);
+            }
+        }).done(function(data){
+            console.log("success는 아님")
+        })
+    })
+
+    console.log("안녕")
+
+
+</script>
+
+</body>
+</html>
