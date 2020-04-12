@@ -20,9 +20,6 @@ function getFormOfRegister() {
         content : items.$regiContent
     }
 
-
-
-
 }
 
 
