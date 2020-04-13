@@ -9,7 +9,7 @@ var item = function () {
     let $regiWriter = $("#regiModal-writer");
     let $regiPassword = $("#regiModal-password");
     let $regiContent = $("#regiModal-content");
-
+    let $eachBoard = $(".eachBoard");
 
     return {
         $tbody,
@@ -21,6 +21,19 @@ var item = function () {
         $regiTitle,
         $regiWriter,
         $regiPassword,
-        $regiContent
+        $regiContent,
+        $eachBoard
+    }
+};
+
+var regiModal = function () {
+    let regiFormObj = {
+        'title' : document.getElementById("regiModal-title").value,
+        'writer' : document.getElementById("regiModal-writer").value,
+        'password' : document.getElementById("regiModal-password").value,
+        'content' : document.getElementById("regiModal-content").value
+    }
+    return {
+        'regiFormObj' : regiFormObj
     }
 };

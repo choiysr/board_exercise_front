@@ -3,6 +3,16 @@ const ajaxService = (function () {
         excuteAjax("GET", url, data, success, fail)
     }
 
+    function getAjaxExceptedtData(url, success, fail) {
+        $.ajax({
+            type: "GET",
+            url: url,
+            dataType: 'json',
+        }).done(function (result) {
+            success(result)
+        })
+    }
+
     function postAjax(url, data, success, fail) {
         excuteAjax("POST", url, data, success, fail)
     }
@@ -19,14 +29,16 @@ const ajaxService = (function () {
         $.ajax({
             type: type,
             url: url,
-            contentType: "application/json",
-            data, data,
-            success: success,
-            fail: fail
+            data: JSON.stringify(data),
+            contentType: 'application/json',
+            dataType: 'json',
+            success : success,
+            error : fail
+
         })
     }
 
-    return {getAjax, postAjax, deleteAjax, putAjax}
+    return {getAjax, getAjaxExceptedtData, postAjax, deleteAjax, putAjax}
 
 })();
 
@@ -39,3 +51,5 @@ class URL {
         return this.commonURL + value
     }
 }
+
+
