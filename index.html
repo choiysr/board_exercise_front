@@ -26,6 +26,11 @@
             cursor: pointer;
         }
 
+        .eachBoard:hover {
+            color: black;
+            font-weight: bold;
+        }
+
 
     </style>
 </head>
@@ -46,8 +51,17 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-body">
-                            <h3 class="card-title ns">자유게시판</h3>
                             <div class="table-responsive">
+                                <select>
+                                    <option>제목</option>
+                                    <option>제목+내용</option>
+                                    <option>작성자</option>
+                                </select>
+                                <input type="text">
+                                <button class="btn btn-outline-secondary ns" data-toggle="modal"
+                                        data-target="#writeBoardModal" type="button">검색
+                                </button>
+
                                 <table id="zero_config" class="table table-striped table-bordered no-wrap ns">
                                     <thead>
                                     <tr style="text-align: center">
@@ -78,12 +92,12 @@
 
     <!-- start of 글쓰기 modal -->
     <div class="modal fade" id="writeBoardModal" tabindex="-1" role="dialog" aria-labelledby="regiModal"
-         aria-hidden="true">
+         aria-hidden="true" data-backdrop="static">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title ns" id="regiModal">글쓰기</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <button type="button" class="close closeModal" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -125,12 +139,12 @@
 
     <!-- start of 조회/수정/삭제 modal -->
     <div class="modal fade" id="ReadBoardModal" tabindex="-1" role="dialog" aria-labelledby="readModal"
-         aria-hidden="true">
+         aria-hidden="true" data-backdrop="static">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title ns" id="readModal">READ</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <button type="button" class="close closeModal" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -162,9 +176,11 @@
                 </div>
                 </form>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="readModal-updateBtn" style="display: none">수정완료
+                    </button>
                     <button type="button" class="btn btn-primary" id="readModal-modiBtn">수정</button>
                     <button type="button" class="btn btn-danger" id="readModal-deleteBtn">삭제</button>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">닫기</button>
+                    <button type="button" class="btn btn-secondary closeModal" data-dismiss="modal">닫기</button>
                 </div>
             </div>
         </div>
@@ -174,12 +190,12 @@
 
     <!-- start of 비밀번호 입력 Modal -->
     <div class="modal fade" id="passwordInputModal" tabindex="-1" role="dialog"
-         aria-labelledby="passwordInputModalTitle" aria-hidden="true">
+         aria-labelledby="passwordInputModalTitle" aria-hidden="true" data-backdrop="static">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 id="password-modal-title"></h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <button type="button" class="close closeModal" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -188,7 +204,7 @@
                     <input type="password" id="pwForAuthCheck">
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">닫기</button>
+                    <button type="button" class="btn btn-secondary closeModal" data-dismiss="modal">닫기</button>
                     <button type="button" class="btn btn-primary" id="passwordCheck">확인</button>
                 </div>
             </div>
@@ -225,7 +241,7 @@
         // 등록일 월도,시간 한자릿수 계산해서 0 추가해주기
         data.forEach(board => {
             tagString += '<tr class="eachBoard" onclick="read(' + board.bno + ');"><td>' + board.bno + '</td><td>' + board.writer + '</td><td>' + board.title + '</td><td>'
-                + board.regdate.year + '.' + board.regdate.monthValue + '.' + board.regdate.dayOfMonth + '  ' + board.regdate.hour + ':' + board.regdate.minute
+                + board.updateddate.year + '.' + board.updateddate.monthValue + '.' + board.updateddate.dayOfMonth + '  ' + board.updateddate.hour + ':' + board.updateddate.minute
                 + '</td><td>' + board.views + '</td></tr>';
         })
         return tagString;
@@ -233,12 +249,11 @@
 
     // tag maker - 페이지 li태그
     function makeBoardPageliTag(data) {
-        console.log(data);
         let tagString = '<li class="page-item" id="zero_config_previous">';
         tagString += '<a href="#" aria-controls="zero_config" class="page-link" onclick="movePage(\'prev\')"><</a></li>';
         let tmpString = '';
         for (let i = data.startPage; i <= data.endPage; i++) {
-            tmpString += '<li class="page-item each-number"><a href="#" onclick="movePage(' + i + ');" aria-controls="zero_config" data-dt-idx="' + i + '" tabindex="0" class="page-link each_page">' + i + '</a></li>';
+            tmpString += '<li class="page-item each-number" id="pageNum' + i + '"><a href="#" onclick="movePage(' + i + ');" aria-controls="zero_config" data-dt-idx="' + i + '" tabindex="0" class="page-link each_page">' + i + '</a></li>';
         }
         tagString += tmpString;
         tagString += '<li class="page-item" id="zero_config_next">';
@@ -248,9 +263,10 @@
 
 
     // 하단의 페이지 리스트 클릭시 해당 페이지의 글 목록을 가져오고 페이지 리스트를 재조정하는 function
-    // 페이지가 10페이지 이상이 되지 않으면 리스트 다시 만들 필요 없음. 수정할 것
+    // === 수정 필요
+    // 1. 페이지가 10페이지 이상이 넘겨지지 않으면(이전과 li생김새에 변함이 없으면) 리스트 다시 만들 필요 없음.
+    // 2. prev, next버튼 활성/바활성 조정은 이전 상태와 true false를 비교하여 조정할것
     function movePage(pageNum) {
-
         // button css 변경 추가할것 ! (click disabled & 색상 변경)
         let currentPage = pageNum;
         if (currentPage == 'prev') {
@@ -263,13 +279,17 @@
         function success(data) {
             staticCurrPage = currentPage;
             items.$tbody.html(makeBoardListTag(data.list));
-            $('.pagination').html(makeBoardPageliTag(data, currentPage));
+            items.$pageUl.html(makeBoardPageliTag(data, currentPage));
+            document.getElementById('pageNum' + staticCurrPage).className += " " + 'active';
+
             if (data.prev == false) {
-                items.$prevBtn.addClass('disabled')
+                // 여기서 왜 아래 jquery 객체를 쓸 수 없는지.. 나중에 수정할것
+                // items.$prevBtn.addClass('disabled')
                 $("#zero_config_previous").addClass('disabled')
             }
             if (data.next == false) {
-                items.$nextBtn.addClass('disabled')
+                // items.$nextBtn.addClass('disabled')
+                $("#zero_config_next").addClass('disabled')
             }
         }
     }
@@ -283,21 +303,15 @@
             staticCurrPage = 1;
             items.$tbody.html(makeBoardListTag(data.list));
             items.$pageUl.html(makeBoardPageliTag(data));
+            document.getElementById('pageNum' + staticCurrPage).className += " " + 'active';
             items.$prevBtn.addClass('disabled')
-            $("#zero_config_previous").addClass('disabled')
+            items.$prevBtn.addClass('disabled')
             if (data.next == false) {
                 items.$nextBtn.addClass('disabled')
             }
         }
     }
 
-    // 글이 등록됐거나, 등록 중 취소하면 등록 modal창 내용을 전체 reset 해주는 function
-    function regiFormReset() {
-        document.getElementById("regiModal-title").value = "";
-        document.getElementById("regiModal-writer").value = "";
-        document.getElementById("regiModal-password").value = "";
-        document.getElementById("regiModal-content").value = "";
-    }
 
     function read(bno) {
         ajaxService.getAjaxExceptedtData(API_Server.commonURL + "board/" + bno, success)
@@ -305,19 +319,38 @@
         function success(data) {
             staticSelectedBoard = data.bno;
             console.log(data)
-            $("#ReadBoardModal").modal('show');
+            items.$readBoardModal.modal('show');
             document.getElementById("readModal").innerHTML = data.bno + "번 글"
-            let $title = $("#readModal-title");
-            let $content = $("#readModal-content");
-            let $writer = $("#readModal-writer");
-            let $password = $("#passwordArea");
-
-            $title.val(data.title).attr('disabled', true);
-            $content.val(data.content).attr('disabled', true);
-            $writer.val(data.writer).attr('disabled', true);
-            $password.attr('disabled', true).css('display', 'none')
+            items.$readTitle.val(data.title).attr('disabled', true);
+            items.$readContent.val(data.content).attr('disabled', true);
+            items.$readWriter.val(data.writer).attr('disabled', true);
+            items.$readPassword.css('display', 'none')
+            items.$readPasswordInput.attr('disabled', true).val(data.password)
         }
     }
+
+    function makeModifyingAvailable() {
+        items.$readTitle.attr('disabled', false);
+        items.$readContent.attr('disabled', false);
+        // items.$readWriter.attr('disabled', false);
+        items.$readPassword.css('display', 'inline-block');
+        items.$modiBtnInReadModal.css('display', 'none');
+        items.$deleteBtnInReadModal.css('display', 'none');
+        items.$finalUpdateBtnInReadModal.css('display', 'inline-block');
+    }
+
+    // modal창 내용을 전체 reset 해주는 function
+    function allFormsReset() {
+        items.$modiBtnInReadModal.css('display', 'inline-block');
+        items.$deleteBtnInReadModal.css('display', 'inline-block');
+        items.$finalUpdateBtnInReadModal.css('display', 'none');
+        document.getElementById("regiModal-title").value = "";
+        document.getElementById("regiModal-writer").value = "";
+        document.getElementById("regiModal-password").value = "";
+        document.getElementById("regiModal-content").value = "";
+        document.getElementById("pwForAuthCheck").value = "";
+    }
+
 
     function openPasswordModal() {
 
@@ -333,34 +366,21 @@
         // 처음 page 로딩시 1페이지를 보여줌.
         items = item();
         firstLoading();
-        //movePage(1);
-
-        // $('#writeBoardModal').on('show.bs.modal', function (event) {
-        //     var button = $(event.relatedTarget) // Button that triggered the modal
-        //     var modal = $(this)
-        //     //modal.find('.modal-body input').val(recipient)
-        // })
-
 
         // [CREATE]  글 등록 버튼 클릭 Event
         items.$registerBoardBtn.on('click', function (e) {
             e.preventDefault();
-            // variables.js import 후 사용하기 (수정!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!)
-            let board = {
-                'title': document.getElementById("regiModal-title").value,
-                'writer': document.getElementById("regiModal-writer").value,
-                'password': document.getElementById("regiModal-password").value,
-                'content': document.getElementById("regiModal-content").value
-            }
-            ajaxService.postAjax(API_Server.commonURL + "board", board, success)
+            let board = modalForm();
+            ajaxService.postAjax(API_Server.commonURL + "board", board.regiFormObj, success, fail)
 
             function success(data) {
-                $(".close").click();
-                console.log("datas from controller")
-                console.log(data)
+                $(".closeModal").click();
                 alert("글 등록이 완료되었습니다.")
-                regiFormReset()
-                movePage(staticCurrPage);
+                movePage(1);
+            }
+
+            function fail(data) {
+                alert(data.responseJSON.message)
             }
         })
 
@@ -371,30 +391,95 @@
         //     console.log(this)
         // });
 
-        // 조회화면의 수정버튼 이벤트
-        $("#readModal-modiBtn").on('click', function () {
-            $("#passwordInputModal").modal('show');
-            $("#password-modal-title").html('수정하기');
+        // 조회화면의 수정버튼 이벤트 > 클릭 시 비밀번호 입력 모달을 띄움
+        items.$modiBtnInReadModal.on('click', () => {
+            items.$passwordInputModal.modal('show');
+            // 이거 동작하는지 확인하고, 확인 될때까지 주석 지우지 마
+            console.log("---focus확인")
+            items.$pwForAuthCheck.focus();
+            items.$passwordModalTitle.html('수정하기');
         })
 
+        // 조회화면의 삭제버튼 이벤트 > 클릭 시 비밀번호 입력 모달을 띄움
+        items.$deleteBtnInReadModal.on('click', () => {
+            items.$passwordInputModal.modal('show');
+            items.$pwForAuthCheck.focus();
+            items.$passwordModalTitle.html('삭제하기');
+        })
+
+
+        // 수정/삭제시 비밀번호 모달창에 입력한 비밀번호를 체크하는 function
         $("#passwordCheck").on('click', () => {
-            console.log($("#pwForAuthCheck").val())
-            console.log(staticSelectedBoard)
+            if (items.$pwForAuthCheck.val() == "") {
+                alert("비밀번호를 입력해주세요.")
+                items.$pwForAuthCheck.focus();
+                return
+            }
+
             let bnoAndPassword = {
-                'bno' : staticSelectedBoard,
-                'password' : $("#pwForAuthCheck").val()
-            }
-            ajaxService.postAjax(API_Server.commonURL + "authcheck",bnoAndPassword,success, fail)
-
-            function success(data) {
-                console.log("SUCCESS!")
-                console.log(data)
+                'bno': staticSelectedBoard,
+                'password': items.$pwForAuthCheck.val()
             }
 
-            function fail() {
-                alert("비밀번호가 틀립니다. 다시 입력해주세요.")
+            ajaxService.postAjax(API_Server.commonURL + "authcheck", bnoAndPassword, success, fail)
+
+            function success() {
+                items.$pwForAuthCheck.val("")
+                items.$passwordInputModal.modal('hide');
+
+                if (items.$passwordModalTitle.html().startsWith('수정')) {
+                    makeModifyingAvailable();
+                } else {
+                    let check = confirm("정말 삭제하시겠습니까?")
+                    if (check) {
+                        ajaxService.deleteAjax(API_Server.commonURL + "board/" + staticSelectedBoard, "", success)
+
+                        function success() {
+                            alert("삭제가 완료되었습니다.")
+                            $(".closeModal").click();
+                            movePage(staticCurrPage);
+                        }
+                    }
+                }
             }
 
+            function fail(data) {
+                alert(data.responseJSON.message)
+                items.$pwForAuthCheck.val("").focus();
+            }
+        })
+
+        $(".closeModal").on("click", () => {
+            allFormsReset();
+            movePage(staticCurrPage)
+        })
+
+        // 최종 수정버튼 클릭시
+        items.$finalUpdateBtnInReadModal.on('click', () => {
+            let check = confirm("수정하시겠습니까?");
+            if (check) {
+                let board = modalForm();
+                // let board = {
+                //     'bno': staticSelectedBoard,
+                //     'title': document.getElementById("readModal-title").value,
+                //     'writer': document.getElementById("readModal-writer").value,
+                //     'password': document.getElementById("readModal-password").value,
+                //     'content': document.getElementById("readModal-content").value
+                // }
+
+                ajaxService.putAjax(API_Server.commonURL + "board", board.readFormObj, success, fail)
+
+                function success() {
+                    $(".closeModal").click();
+                    alert("글 수정이 완료되었습니다.")
+                    movePage(staticCurrPage);
+                    read(staticCurrPage);
+                }
+
+                function fail(data) {
+                    alert(data.responseJSON.message);
+                }
+            }
         })
 
 

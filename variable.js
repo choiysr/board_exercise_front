@@ -8,8 +8,24 @@ var item = function () {
     let $regiTitle = $("#regiModal-title");
     let $regiWriter = $("#regiModal-writer");
     let $regiPassword = $("#regiModal-password");
-    let $regiContent = $("#regiModal-content");
+    let $regiContent = $("#regiModal-content")
+    let $readTitle = $("#readModal-title");
+    let $readContent = $("#readModal-content");
+    let $readWriter = $("#readModal-writer");
+    let $readPassword = $("#passwordArea");
+    let $readPasswordInput = $("#readModal-password");
+
     let $eachBoard = $(".eachBoard");
+
+    let $readBoardModal = $("#ReadBoardModal");
+    let $modiBtnInReadModal = $("#readModal-modiBtn");
+    let $deleteBtnInReadModal = $("#readModal-deleteBtn");
+    let $finalUpdateBtnInReadModal = $("#readModal-updateBtn");
+    let $passwordInputModal = $("#passwordInputModal");
+    let $passwordModalTitle = $("#password-modal-title");
+    let $pwForAuthCheck = $("#pwForAuthCheck");
+
+
 
     return {
         $tbody,
@@ -22,18 +38,41 @@ var item = function () {
         $regiWriter,
         $regiPassword,
         $regiContent,
-        $eachBoard
+        $readTitle,
+        $readContent,
+        $readWriter,
+        $readPassword,
+        $readPasswordInput,
+        $eachBoard,
+        $readBoardModal,
+        $modiBtnInReadModal,
+        $deleteBtnInReadModal,
+        $finalUpdateBtnInReadModal,
+        $passwordInputModal,
+        $passwordModalTitle,
+        $pwForAuthCheck
+
     }
 };
 
-var regiModal = function () {
+var modalForm = function () {
     let regiFormObj = {
         'title' : document.getElementById("regiModal-title").value,
         'writer' : document.getElementById("regiModal-writer").value,
         'password' : document.getElementById("regiModal-password").value,
         'content' : document.getElementById("regiModal-content").value
     }
+    let readFormObj = {
+        'bno': staticSelectedBoard,
+        'title': document.getElementById("readModal-title").value,
+        'writer': document.getElementById("readModal-writer").value,
+        'password': document.getElementById("readModal-password").value,
+        'content': document.getElementById("readModal-content").value
+    }
+
+
     return {
-        'regiFormObj' : regiFormObj
+        'regiFormObj' : regiFormObj,
+        'readFormObj' : readFormObj
     }
 };
