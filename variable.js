@@ -1,5 +1,5 @@
 var item = function () {
-    let $tbody = $('tbody');
+    let $tbody = $('#boardListBody');
     let $pageUl = $('.pagination');
     let $prevBtn = $("#zero_config_previous");
     let $nextBtn = $("#zero_config_next");
@@ -25,7 +25,8 @@ var item = function () {
     let $passwordModalTitle = $("#password-modal-title");
     let $pwForAuthCheck = $("#pwForAuthCheck");
 
-
+    let $replyTable = $("#replyTable");
+    let $replyPasswordInputModal = $("#passwordInputModal-reply");
 
     return {
         $tbody,
@@ -50,8 +51,9 @@ var item = function () {
         $finalUpdateBtnInReadModal,
         $passwordInputModal,
         $passwordModalTitle,
-        $pwForAuthCheck
-
+        $pwForAuthCheck,
+        $replyTable,
+        $replyPasswordInputModal
     }
 };
 
@@ -69,10 +71,17 @@ var modalForm = function () {
         'password': document.getElementById("readModal-password").value,
         'content': document.getElementById("readModal-content").value
     }
-
+    let replyFormObj = {
+        'boardno' : staticSelectedBoard,
+        'writer' : document.getElementById("readModal-reply-writer").value,
+        'password' : document.getElementById("readModal-reply-password").value,
+        'content' : document.getElementById("readModal-reply-content").value,
+    }
 
     return {
         'regiFormObj' : regiFormObj,
-        'readFormObj' : readFormObj
+        'readFormObj' : readFormObj,
+        'replyFormObj' : replyFormObj
     }
 };
+

@@ -1,6 +1,15 @@
 const ajaxService = (function () {
     function getAjax(url, data, success, fail) {
-        excuteAjax("GET", url, data, success, fail)
+        $.ajax({
+            type: "GET",
+            url: url,
+            data: data,
+            contentType: 'application/json',
+            dataType: 'json',
+            async : false,
+            success : success,
+            error : fail
+        })
     }
 
     function getAjaxExceptedtData(url, success, fail) {
@@ -8,6 +17,7 @@ const ajaxService = (function () {
             type: "GET",
             url: url,
             dataType: 'json',
+            async : false,
         }).done(function (result) {
             success(result)
         })
@@ -32,9 +42,9 @@ const ajaxService = (function () {
             data: JSON.stringify(data),
             contentType: 'application/json',
             dataType: 'json',
+            async : false,
             success : success,
             error : fail
-
         })
     }
 
