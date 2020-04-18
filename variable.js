@@ -27,6 +27,11 @@ var item = function () {
 
     let $replyTable = $("#replyTable");
     let $replyPasswordInputModal = $("#passwordInputModal-reply");
+    let $replyRegiBtn = $("#replyRegiBtn")
+    let $replyModiBtn = $("#replyModiBtn")
+    let $replyWriter = $("#readModal-reply-writer");
+    let $replyPassword = $("#readModal-reply-password");
+    let $replyContent = $("#readModal-reply-content");
 
     return {
         $tbody,
@@ -53,7 +58,12 @@ var item = function () {
         $passwordModalTitle,
         $pwForAuthCheck,
         $replyTable,
-        $replyPasswordInputModal
+        $replyPasswordInputModal,
+        $replyRegiBtn,
+        $replyModiBtn,
+        $replyWriter,
+        $replyPassword,
+        $replyContent
     }
 };
 
@@ -84,4 +94,3 @@ var modalForm = function () {
         'replyFormObj' : replyFormObj
     }
 };
-
