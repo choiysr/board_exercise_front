@@ -72,8 +72,10 @@ var modalForm = function () {
         'title' : document.getElementById("regiModal-title").value,
         'writer' : document.getElementById("regiModal-writer").value,
         'password' : document.getElementById("regiModal-password").value,
-        'content' : document.getElementById("regiModal-content").value
+        'content' : document.getElementById("regiModal-content").value,
+        'attachedList' : ''
     }
+
     let readFormObj = {
         'bno': staticSelectedBoard,
         'title': document.getElementById("readModal-title").value,
