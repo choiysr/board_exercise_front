@@ -79,17 +79,18 @@
         /*    height: 100px;*/
         /*}*/
 
-        #regiModal-attachedFileListUl {
+        #regiModal-attachedFileListUl, #readModal-attachedFileListUl{
             list-style: none;
             margin: 0;
             padding: 0;
         }
-        #regiModal-attachedFileListUl li {
+        #regiModal-attachedFileListUl li, #readModal-attachedFileListUl li {
             margin: 0 0 0 0;
             padding: 0 0 0 0;
             border : 0;
             float: left;
         }
+
 
     </style>
 </head>
@@ -149,6 +150,8 @@
             </div>
         </div>
     </div>
+</div>
+
 
     <!-- start of 글쓰기 modal -->
     <div class="modal fade custom-modal-css" id="writeBoardModal" tabindex="-1" role="dialog"
@@ -185,10 +188,10 @@
                         <hr>
                         <div class="form-group uploadDiv">
                             <p>첨부파일</p>
-                            <input type="file" name="uploadFile" class="form-control" id="regiModal-attachment" multiple>
+                            <input type="file" name="uploadFile" class="form-control" multiple>
                         </div>
                         <div id="regiModal-attachedFileListDiv">
-                            <ul id="regiModal-attachedFileListUl"></ul>
+                            <ul class="regiAndReadModiFileUl" id="regiModal-attachedFileListUl"></ul>
                         </div>
                     </form>
                 </div>
@@ -235,12 +238,17 @@
                                 <textarea class="form-control" id="readModal-content" style="height: 200px"></textarea>
                             </div>
                             <hr>
-<!--                            <div class="form-group">-->
-<!--                                <label for="regiModal-attachment" class="col-form-label">첨부파일</label>-->
-<!--                                <input type="file" class="form-control" id="regiModal-attachment"></input>-->
-<!--                            </div>-->
+
+                            <div class="form-group uploadDivforModi" style="display: none">
+                                <p>첨부파일</p>
+                                <input type="file" name="uploadFile" class="form-control" multiple>
+                            </div>
+                            <div id="form-group readModal-attachedFileListDiv">
+                                <ul id="readModal-attachedFileListUl"></ul>
+                            </div>
 
                         </form>
+
                         <div class="modal-footer">
                             <button type="button" class="btn btn-primary" id="readModal-updateBtn"
                                     style="display: none">
@@ -471,13 +479,16 @@
                 }
             }
 
-            // 유효한 read만 조회수 올리게 수정할것
+            // 유효한 read만 조회수 올리게 수정할것=================================================================
             function read(bno) {
                 console.log("read실행")
                 console.log(bno)
                 ajaxService.getAjaxExceptedtData(API_Server.commonURL + "board/" + bno, success)
 
                 function success(data) {
+                    console.log("attach가져와지는지 확인")
+                    console.log(data)
+                    makeAttachmentListLiTag(data.attachedList)
                     staticSelectedBoard = data.bno;
                     items.$readBoardModal.modal('show');
                     document.getElementById("readModal").innerHTML = data.bno + "번 글"
@@ -499,6 +510,11 @@
                 }
             }
 
+            // 새탭에서 이미지 열기
+            function showImage(fileName) {
+                window.open(API_Server.commonURL+"/display?fileName="+fileName);
+            }
+
             function makeModifyingAvailable() {
                 items.$readTitle.attr('disabled', false);
                 items.$readContent.attr('disabled', false);
@@ -507,6 +523,42 @@
                 items.$modiBtnInReadModal.css('display', 'none');
                 items.$deleteBtnInReadModal.css('display', 'none');
                 items.$finalUpdateBtnInReadModal.css('display', 'inline-block');
+                let attachlist = $("#readModal-attachedFileListUl");
+                if(attachlist[0].childElementCount!=0) {
+                    $(".xicon").css('display','inline-block')
+                }
+                $(".uploadDivforModi").css('display','inline-block')
+            }
+
+            // 조회창의 첨부파일 리스트
+            function makeAttachmentListLiTag(attachmentList) {
+                let fileListBox = $("#readModal-attachedFileListUl");
+                attachmentList.forEach(attachment => {
+                    //요기
+                    let attachmentObj = {
+                        'path' : attachment.path,
+                        'uuid' : attachment.uuid,
+                        'name' : attachment.name,
+                        'image' : ''
+                    }
+                    finalFileFormData.push(attachmentObj)
+                    let target = "'"+attachment.uuid+attachment.name+"'";
+                    let fileFullName = "";
+                    let fileFullNameExceptTh =""
+                    if(attachment.image=='1') {
+                        attachmentObj.image = 1;
+                        fileFullName = encodeURIComponent(attachment.path+"/th_"+attachment.uuid+attachment.name);
+                        fileFullNameExceptTh = "'"+encodeURIComponent(attachment.path+"/"+attachment.uuid+attachment.name)+"'";
+                        fileListBox.append('<li class= "boardAttached" id="'+(attachment.uuid+attachment.name)+'"><img src='+API_Server.commonURL+'/display?fileName='+fileFullName+
+                            ' style="display: block; cursor: pointer;" onclick="showImage('+fileFullNameExceptTh+');">'+attachment.name+'<img src="assets/xicon2.png" class="xicon" style="cursor: pointer; display: none;" onclick="deleteFileTag('+target+');">'+'</li>');
+                    } else {
+                        fileFullName = encodeURIComponent(attachment.path+"/"+attachment.uuid+attachment.name);
+                        attachmentObj.image = 0;
+                        fileListBox.append('<li id="'+(attachment.uuid+attachment.name)+'"><a href='+API_Server.commonURL+'/download?wholeFileName='+fileFullName+'><img src="assets/fileicon.png" style="display: block; cursor: pointer; width: 100px; height: 100px;"></a>'+
+                            attachment.name+'<img src="assets/xicon2.png" class="xicon" style="cursor: pointer; display: none;" onclick="deleteFileTag('+target+');">'+'</li>');
+                    }
+
+                })
             }
 
             // modal창 내용을 전체 reset 해주는 function
@@ -522,8 +574,14 @@
                 document.getElementById("readModal-reply-writer").value = "";
                 document.getElementById("readModal-reply-password").value = "";
                 document.getElementById("readModal-reply-content").value = "";
-                items.$replyWriter.css('disabled', false);
-                items.$replyPassword.css('disabled', false);
+                items.$replyWriter.attr('disabled', false);
+                items.$replyPassword.attr('disabled', false);
+                items.$replyModiBtn.css('display','none');
+                items.$replyRegiBtn.css('display','inline-block');
+                finalFileFormData = new Array();
+                $(".uploadDivforModi").css('display','none')
+                document.getElementById("readModal-attachedFileListUl").innerHTML = "";
+                document.getElementById("regiModal-attachedFileListUl").innerHTML = "";
             }
 
             // 댓글 삭제
@@ -603,15 +661,17 @@
 
             // 게시글 등록창에서 파일을 삭제한경우
             function deleteFileTag(targetFile) {
-                console.log(targetFile)
-                finalFileFormData.forEach(each=>{
-                    if(each.name == targetFile) {
-                        console.log(targetFile+"을 삭제합니다.")
-                        //여기 파일 삭제하는 로직 들어가야함.!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!2020/04/20이후
-                        console.log(each)
-                        var deleteTarget = document.getElementById(targetFile);
-                        deleteTarget.parentNode.removeChild(deleteTarget);
-                    }
+                console.log("클릭!!")
+                finalFileFormData.forEach(function(item, index) {
+                    console.log("====타겟파일")
+                    console.log(targetFile)
+                    console.log("====uuid+name")
+                    console.log(item.uuid+item.name)
+                  if(item.uuid+item.name == targetFile) {
+                      finalFileFormData.splice(index,1);
+                      var deleteTarget = document.getElementById(targetFile);
+                      deleteTarget.parentNode.removeChild(deleteTarget);
+                  }
                 })
             }
 
@@ -626,17 +686,13 @@
                 items.$registerBoardBtn.on('click', function (e) {
                     e.preventDefault();
                     let board = modalForm();
-
-                    let attachedList = new FormData();
-                    finalFileFormData.forEach(each => {
-                        attachedList.append("attachedList",each)
-                    })
-                    board.regiFormObj.attachedList = attachedList;
+                    board.regiFormObj.attachedList = finalFileFormData;
                     ajaxService.postAjax(API_Server.commonURL + "board", board.regiFormObj, success, fail)
 
                     function success(data) {
                         $(".closeModal").click();
                         alert("글 등록이 완료되었습니다.")
+                        finalFileFormData = new Array();
                         movePage(1);
                     }
 
@@ -698,7 +754,7 @@
                                 function success() {
                                     alert("삭제가 완료되었습니다.")
                                     $(".closeModal").click();
-                                    movePage(staticCurrPage, staticCurrSearchOption, staticCurrSearchKeywordc);
+                                    movePage(staticCurrPage, staticCurrSearchOption, staticCurrSearchKeyword);
                                 }
                             }
                         }
@@ -716,7 +772,7 @@
                     movePage(staticCurrPage, staticCurrSearchOption, staticCurrSearchKeyword)
                 })
 
-                // 최종 수정버튼 클릭시
+                // (댓글) 최종 수정버튼 클릭시
                 $("#replyModiBtn").on('click', () => {
                     let check = confirm("수정하시겠습니까?");
                     if (check) {
@@ -729,7 +785,7 @@
                         ajaxService.putAjax(API_Server.commonURL + "reply", replyObj, success, fail)
 
                         function success() {
-                            alert("글 수정이 완료되었습니다.")
+                            alert("댓글 수정이 완료되었습니다.")
                             allFormsReset();
                             read(staticSelectedBoard);
                         }
@@ -739,6 +795,28 @@
                         }
                     }
                 })
+
+                // 글 수정
+                items.$finalUpdateBtnInReadModal.on('click', () => {
+                    let check = confirm("수정하시겠습니까?");
+                    if (check) {
+                        let board = modalForm();
+                        board.readFormObj.attachedList = finalFileFormData;
+                        ajaxService.putAjax(API_Server.commonURL + "board", board.readFormObj, success, fail)
+
+                        function success() {
+                            alert("글 수정이 완료되었습니다.")
+                            allFormsReset();
+                            read(staticSelectedBoard);
+                        }
+
+                        function fail(data) {
+                            alert(data.responseJSON.message);
+                        }
+
+                    }
+                })
+
 
                 // 검색
                 $("#searchBtn").on("click", () => {
@@ -793,11 +871,11 @@
 
 
                 // 첨부파일 감지하여 썸네일 생성
-                $("input[name='uploadFile']").on('change', () => {
+                $("input[name='uploadFile']").on('change', (e) => {
                     let formData = new FormData();
-                    let $inputFile = $("input[name='uploadFile']");
+                    let $inputFile = $(e.target);
                     let files = $inputFile[0].files;
-
+                    console.log(files)
                     for(let i=0;i<files.length;i++) {
                         // 기존이랑 같은파일 첨부하면 에러띄우기(==========추가할것)
                         // 파일 확장자 체크해서 exe 등 첨부 못하게
@@ -812,22 +890,29 @@
                         data : formData,
                         type:'POST',
                         success: function(data) {
-                            // let $uploadDiv = $(".uploadDiv");
-                            // let $cloneObj =  $uploadDiv.clone();
-                            let attachListBox = $("#regiModal-attachedFileListUl");
+                            console.log("성공")
+                            console.log(data)
+                            console.log($inputFile.parent().siblings().find('ul'))
+                             // let $uploadDiv = $(".uploadDiv");
+                             // let $cloneObj =  $uploadDiv.clone();
+                            let attachListBox = $inputFile.parent().siblings().find('ul');
 
                             data.forEach(file => {
                                 let attachment = {
                                     'path' : file.path,
-                                    'name' : file.uuid+file.fileName
+                                    'uuid' : file.uuid,
+                                    'name' : file.fileName,
+                                    'image' : ''
                                 }
 
                                 let target = "'"+file.uuid+file.fileName+"'";
                                 if(file.image=='y') {
+                                    attachment.image = 1;
                                     let fileName = encodeURIComponent(file.path+"/th_"+file.uuid+file.fileName);
                                     attachListBox.append('<li id="'+(file.uuid+file.fileName)+'"><img src='+API_Server.commonURL+'/display?fileName='+fileName+
                                         ' style="display: block">'+file.fileName+'<img src="assets/xicon2.png" style="cursor: pointer" onclick="deleteFileTag('+target+');">'+'</li>');
                                 } else {
+                                    attachment.image = 0;
                                     attachListBox.append('<li id="'+(file.uuid+file.fileName)+'"><img src="assets/fileicon.png" style="display: block; width: 100px; height: 100px;">'+
                                         file.fileName+'<img src="assets/xicon2.png" style="cursor: pointer" onclick="deleteFileTag('+target+');">'+'</li>')
                                 }
@@ -846,18 +931,10 @@
                             // })
                         }
                     })
-
-
-
                 })
-
-
-
 
             }) // end of onready
         </script>
-
-
 </body>
 
 </html>

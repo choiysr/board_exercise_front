@@ -32,6 +32,8 @@ var item = function () {
     let $replyWriter = $("#readModal-reply-writer");
     let $replyPassword = $("#readModal-reply-password");
     let $replyContent = $("#readModal-reply-content");
+    let $fileListBoxInReadModal = $("#readModal-attachedFileListUl");
+    let $fileListBoxInRegiModal = $("#regiModal-attachedFileListUl");
 
     return {
         $tbody,
@@ -63,7 +65,9 @@ var item = function () {
         $replyModiBtn,
         $replyWriter,
         $replyPassword,
-        $replyContent
+        $replyContent,
+        $fileListBoxInReadModal,
+        $fileListBoxInRegiModal
     }
 };
 
@@ -81,7 +85,8 @@ var modalForm = function () {
         'title': document.getElementById("readModal-title").value,
         'writer': document.getElementById("readModal-writer").value,
         'password': document.getElementById("readModal-password").value,
-        'content': document.getElementById("readModal-content").value
+        'content': document.getElementById("readModal-content").value,
+        'attachedList' : ''
     }
     let replyFormObj = {
         'boardno' : staticSelectedBoard,
