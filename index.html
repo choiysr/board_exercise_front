@@ -122,6 +122,13 @@
                                     <button class="btn btn-outline-secondary ns" id="searchCancleBtn" type="button">
                                         검색조건해제
                                     </button>
+                                    <b>게시글</b>
+                                    <select id="selectedAmount">
+                                        <option value="10">10개</option>
+                                        <option value="20">20개</option>
+                                        <option value="30">30개</option>
+                                    </select>
+                                    <b>씩 보기</b>
                                 </form>
                                 <table id="zero_config" class="table table-striped table-bordered no-wrap ns">
                                     <thead>
@@ -211,7 +218,9 @@
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title ns" id="readModal">READ</h5>
+                    <h5 class="modal-title ns" id="readModal">현재글</h5>
+                    <button type="button" class="btn-rounded" id="moveToPrevBoardBtn" onclick="getPrevBno();">이전글</button>
+                    <button type="button" class="btn-rounded" id="moveToNextBoardBtn" onclick="getNextBno();">다음글</button>
                     <button type="button" class="close closeModal" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -239,9 +248,9 @@
                             </div>
                             <hr>
 
-                            <div class="form-group uploadDivforModi" style="display: none">
+                            <div class="form-group" id="uploadDivforModi" style="display: none">
                                 <p>첨부파일</p>
-                                <input type="file" name="uploadFile" class="form-control" multiple>
+                                <input type="file" name="uploadFile" class="form-control"  multiple>
                             </div>
                             <div id="form-group readModal-attachedFileListDiv">
                                 <ul id="readModal-attachedFileListUl"></ul>
@@ -293,8 +302,7 @@
     </div>
         <!-- end of 조회/수정/삭제 modal-->
 
-
-        <!-- start of 비밀번호 입력 Modal -->
+       <!-- start of 비밀번호 입력 Modal -->
         <div class="modal fade" id="passwordInputModal" tabindex="-1" role="dialog"
              aria-labelledby="passwordInputModalTitle" aria-hidden="true" data-backdrop="static">
             <div class="modal-dialog modal-dialog-centered" role="document">
@@ -335,7 +343,7 @@
         <script>
 
             const API_Server = new URL("http://localhost:8080/");
-            const amount = 10;
+            var amount = 10;
             var staticCurrPage;
             var staticCurrSearchOption;
             var staticCurrSearchKeyword;
@@ -345,24 +353,28 @@
             var finalFileFormData = new Array();
             var $uploadDiv = $(".uploadDiv");
             var $cloneObj =  $uploadDiv.clone();
-            var $uploadDivforModi = $(".uploadDivforModi");
+            var $uploadDivforModi = $("#uploadDivforModi");
             var $cloneObjforModi = $uploadDivforModi.clone();
 
 
             // tag maker - 게시글들
             function makeBoardListTag(data) {
                 let tagString = '';
-                let count = data.total - ((staticCurrPage-1)*10)
+                console.log("=====확인")
+                console.log(data)
+                let count = data.total - ((staticCurrPage-1)*amount)
                 // 등록일 월도,시간 한자릿수 계산해서 0 추가해주기
                 data.list.forEach(board => {
+                    let titleString = board.title;
+                    if(board.atcount!=0){
+                        titleString += '<img src="assets/existfileicon.png">';
+                    }
                     if (board.rcount == 0) {
-                        console.log(count)
-                        tagString += '<tr class="eachBoard" onclick="read(' + board.bno + ');"><td>' + count + '</td><td>' + board.writer + '</td><td>' + board.title + '</td><td>'
+                        tagString += '<tr class="eachBoard" onclick="read(' + board.bno +','+count+');"><td id="fakeNo'+count+'">' + count + '</td><td>' + board.writer + '</td><td>' + titleString + '</td><td>'
                             + board.updateddate.year + '.' + board.updateddate.monthValue + '.' + board.updateddate.dayOfMonth + '  ' + board.updateddate.hour + ':' + board.updateddate.minute
                             + '</td><td>' + board.views + '</td></tr>';
                     } else {
-                        console.log(count)
-                        tagString += '<tr class="eachBoard" onclick="read(' + board.bno + ');"><td>' + count + '</td><td>' + board.writer + '</td><td>' + board.title + '[' + board.rcount + ']</td><td>'
+                        tagString += '<tr class="eachBoard" onclick="read(' + board.bno +','+count+');"><td id="fakeNo'+count+'">' + count + '</td><td>' + board.writer + '</td><td>' + titleString + '[' + board.rcount + ']</td><td>'
                             + board.updateddate.year + '.' + board.updateddate.monthValue + '.' + board.updateddate.dayOfMonth + '  ' + board.updateddate.hour + ':' + board.updateddate.minute
                             + '</td><td>' + board.views + '</td></tr>';
                     }
@@ -404,17 +416,17 @@
 
             // 하단의 페이지 리스트 클릭시 해당 페이지의 글 목록을 가져오고 페이지 리스트를 재조정하는 function
             // === 수정 필요
-            // 1. 페이지가 10페이지 이상이 넘겨지지 않으면(이전과 li생김새에 변함이 없으면) 리스트 다시 만들 필요 없음.
-            // 2. prev, next버튼 활성/바활성 조정은 이전 상태와 true false를 비교하여 조정할것
-            function movePage(pageNum, option, searchKeyword) {
+            // 페이지가 10페이지 이상이 넘겨지지 않으면(이전과 li생김새에 변함이 없으면) 리스트 다시 만들 필요 없는데..
+            function movePage(pageNum, option, searchKeyword, sortBy, order) {
                 let currentPage = pageNum;
                 let searchOption;
                 let keyword;
+                console.log("WELCOME")
 
                 if (currentPage == 'prev') {
-                    currentPage = staticCurrPage - 1
+                    currentPage = (parseInt($(".each-number").first().text()))-1
                 } else if (currentPage == 'next') {
-                    currentPage = staticCurrPage + 1
+                    currentPage = (parseInt($(".each-number").last().text()))+1
                 }
 
                 if (option == null || searchKeyword == null) {
@@ -432,7 +444,9 @@
                     'pageRequest': currentPage,
                     'amount': amount,
                     'searchOption': searchOption,
-                    'keyword': keyword
+                    'keyword': keyword,
+                    'sortBy' : 'bno',
+                    'order' : false
                 }
 
 
@@ -443,9 +457,6 @@
                         alert("검색 결과가 없습니다.")
                         return;
                     }
-                    console.log("데이터확인")
-                    console.log(data)
-                    console.log(currentPage);
                     staticCurrPage = currentPage;
                     staticCurrSearchOption = searchOption;
                     staticCurrSearchKeyword = keyword;
@@ -460,13 +471,39 @@
                     }
 
                     if (data.prev == false) {
+                        console.log("PREV FALSE")
                         // 여기서 왜 아래 jquery 객체를 쓸 수 없는지.. 나중에 수정할것
                         // items.$prevBtn.addClass('disabled')
                         $("#zero_config_previous").addClass('disabled')
                     }
                     if (data.next == false) {
+                        console.log("NEXT FALSE")
                         // items.$nextBtn.addClass('disabled')
                         $("#zero_config_next").addClass('disabled')
+                    }
+                }
+            }
+
+            function getPrevBno() {
+                let bno = staticSelectedBoard;
+                ajaxService.getAjaxExceptedtData(API_Server.commonURL + "board/prevBno/" + bno, success)
+                function success(data) {
+                    if(data==0) {
+                        alert("첫 번째 게시글 입니다.")
+                    } else {
+                        read(data)
+                    }
+                }
+            }
+
+            function getNextBno() {
+                let bno = staticSelectedBoard;
+                ajaxService.getAjaxExceptedtData(API_Server.commonURL + "board/nextBno/" + bno, success)
+                function success(data) {
+                    if(data==0) {
+                        alert("마지막 게시글 입니다.")
+                    } else {
+                        read(data)
                     }
                 }
             }
@@ -486,8 +523,6 @@
                 ajaxService.getAjax(API_Server.commonURL + "list", pageInfoObj, success)
 
                 function success(data) {
-                    console.log("-----데이터total확인")
-                    console.log(data)
                     items = item();
                     staticCurrPage = 1;
                     items.$tbody.html(makeBoardListTag(data));
@@ -496,8 +531,10 @@
                     items.$prevBtn.addClass('disabled')
                     items.$prevBtn.addClass('disabled')
 
+                    $("#zero_config_previous").addClass('disabled')
+
                     if (data.next == false) {
-                        items.$nextBtn.addClass('disabled')
+                        $("#zero_config_next").addClass('disabled')
                     }
                 }
             }
@@ -526,8 +563,8 @@
                 return this.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"");
             };
 
-            // 유효한 read만 조회수 올리게 수정할것=================================================================
-            function read(bno) {
+            // 게시글 조회
+            function read(bno, fakeNo) {
                 ajaxService.getAjaxExceptedtData(API_Server.commonURL + "board/" + bno, success)
 
                 function success(data) {
@@ -536,7 +573,16 @@
                     makeAttachmentListLiTag(data.attachedList)
                     staticSelectedBoard = data.bno;
                     items.$readBoardModal.modal('show');
-                    document.getElementById("readModal").innerHTML = data.bno + "번 글"
+                    // document.getElementById("moveToPrevBoardBtn").addEventListener('click',function(e) {
+                    //     if(fakeNo!=null) {
+                    //         $(".closeModal").click();
+                    //         let prevFakeNo = 'fakeNo'+(fakeNo-1);
+                    //         document.getElementById(prevFakeNo).parentElement.click();
+                    //     } else {
+                    //     }
+                    // })
+                    // document.getElementById("readModal").innerHTML = data.bno + "번 글"
+                    // document.getElementById("readModal").style.display = 'hidden';
                     items.$readTitle.val(data.title.unescapeHtml()).attr('disabled', true);
                     items.$readContent.html(data.content).attr('disabled', true);
                     items.$readWriter.val(data.writer).attr('disabled', true);
@@ -574,14 +620,13 @@
                 }
                 console.log("-----")
                 $("#replyArea").css('display','none');
-                $(".uploadDivforModi").css('display','inline-block')
+                $("#uploadDivforModi").css('display','inline-block')
             }
 
             // 조회창의 첨부파일 리스트
             function makeAttachmentListLiTag(attachmentList) {
                 let fileListBox = $("#readModal-attachedFileListUl");
                 attachmentList.forEach(attachment => {
-                    //요기
                     let attachmentObj = {
                         'path' : attachment.path,
                         'uuid' : attachment.uuid,
@@ -589,16 +634,20 @@
                         'image' : ''
                     }
                     finalFileFormData.push(attachmentObj)
+                    console.log("static file확인")
+                    console.log(finalFileFormData);
                     let target = "'"+attachment.uuid+attachment.name+"'";
                     let fileFullName = "";
                     let fileFullNameExceptTh =""
                     if(attachment.image=='1') {
+                        console.log("make icon - img")
                         attachmentObj.image = 1;
                         fileFullName = encodeURIComponent(attachment.path+"/th_"+attachment.uuid+attachment.name);
                         fileFullNameExceptTh = "'"+encodeURIComponent(attachment.path+"/"+attachment.uuid+attachment.name)+"'";
                         fileListBox.append('<li class= "boardAttached" id="'+(attachment.uuid+attachment.name)+'"><img src='+API_Server.commonURL+'/display?fileName='+fileFullName+
                             ' style="display: block; cursor: pointer;" onclick="showImage('+fileFullNameExceptTh+');">'+attachment.name+'<img src="assets/xicon2.png" class="xicon" style="cursor: pointer; display: none;" onclick="deleteFileTag('+target+');">'+'</li>');
                     } else {
+                        console.log("make icon - not img")
                         fileFullName = encodeURIComponent(attachment.path+"/"+attachment.uuid+attachment.name);
                         attachmentObj.image = 0;
                         fileListBox.append('<li id="'+(attachment.uuid+attachment.name)+'"><a href='+API_Server.commonURL+'/download?wholeFileName='+fileFullName+'><img src="assets/fileicon.png" style="display: block; cursor: pointer; width: 100px; height: 100px;"></a>'+
@@ -626,7 +675,7 @@
                 items.$replyModiBtn.css('display','none');
                 items.$replyRegiBtn.css('display','inline-block');
                 finalFileFormData = new Array();
-                $(".uploadDivforModi").css('display','none')
+                $("#uploadDivforModi").css('display','none')
                 $("#replyArea").css('display','inline-block')
                 document.getElementById("readModal-attachedFileListUl").innerHTML = "";
                 document.getElementById("regiModal-attachedFileListUl").innerHTML = "";
@@ -656,8 +705,7 @@
                         ajaxService.deleteAjax(API_Server.commonURL + "reply/" + rno, "", success)
 
                         function success(data) {
-                            console.log("삭제성공")
-                            console.log(data)
+                            alert("삭제가 완료되었습니다.")
                             read(staticSelectedBoard)
                         }
                     } else return;
@@ -675,7 +723,7 @@
 
                 // 비밀번호 입력창 취소 누른 경우
                 if (replyPasswordInput == null) {
-                    return
+                    return;
                 }
                 let rnoAndPassword = {
                     'bno': rno,
@@ -687,7 +735,6 @@
 
                 function success(data) {
                     staticSelectedReply = rno;
-                    console.log("===password성공")
                     ajaxService.getAjaxExceptedtData(API_Server.commonURL + "reply/forUpdate/" + rno, success)
 
                     function success(data) {
@@ -723,15 +770,7 @@
                 })
             }
 
-            function checkBoardValid(board){
-                let result =  {
-                    'status' : true,
-                    'message' : ''
-                };
-                if(board.title.length>30) {
 
-                }
-            }
 
             $(document).ready(() => {
 
@@ -743,26 +782,45 @@
                 // [CREATE]  게시글 등록 버튼 클릭 Event
                 items.$registerBoardBtn.on('click', function (e) {
                     e.preventDefault();
-                    let board = modalForm();
-                    // board.regiFormObj.title.replace("<script", "&lt;script").replace("<\/script", "&lt;/script");
-                    // board.regiFormObj.content.replace("<script", "&lt;script").replace("<\/script", "&lt;/script");
-                    board.regiFormObj.attachedList = finalFileFormData;
-                    ajaxService.postAjax(API_Server.commonURL + "board", board.regiFormObj, success, fail)
+                    let resultObj =  checkValid('board','regi');
+                    console.log(resultObj)
+                    if(!resultObj.status) {
+                        // 유효성검사 통과 못한 경우
+                        alert(resultObj.faliMsg);
+                        document.getElementById(resultObj.focusTarget).focus();
+                    }
+                    else {
+                        console.log("valid pass")
+                        let board = modalForm();
+                        // board.regiFormObj.title.replace("<script", "&lt;script").replace("<\/script", "&lt;/script");
+                        // board.regiFormObj.content.replace("<script", "&lt;script").replace("<\/script", "&lt;/script");
+                        board.regiFormObj.attachedList = finalFileFormData;
+                        ajaxService.postAjax(API_Server.commonURL + "board", board.regiFormObj, success, fail)
 
-                    function success(data) {
-                        $(".closeModal").click();
-                        alert("글 등록이 완료되었습니다.")
-                        finalFileFormData = new Array();
-                        movePage(1);
-                        $uploadDiv.html($cloneObj.html());
+                        function success(data) {
+                            $(".closeModal").click();
+                            alert("글 등록이 완료되었습니다.")
+                            finalFileFormData = new Array();
+                            movePage(1);
+                            $uploadDiv.html($cloneObj.html());
+                        }
+
+                        function fail(data) {
+                            console.log(data)
+                           // let failMSG = data.responseJSON.message;
+                            // alert(failMSG)
+                            // onfocus(failMSG, 'regi')
+                        }
                     }
 
-                    function fail(data) {
-                        let failMSG = data.responseJSON.message;
-                        alert(failMSG)
-                        onfocus(failMSG, 'regi')
-                    }
                 })
+
+                $("#selectedAmount").on('change',()=>{
+                    amount = $("#selectedAmount").val();
+                    movePage(1, staticCurrSearchOption, staticCurrSearchKeyword);
+
+                })
+
 
                 // [READ] 글 목록의 게시글 클릭시 Event > 왜 jQuery 동작 안하냐...  > onclick()으로 갈음. 수정할것
                 // $('.eachBoard').on('click',function(e) {
@@ -772,22 +830,19 @@
                 // });
 
                 // 조회화면의 수정버튼 이벤트 > 클릭 시 비밀번호 입력 모달을 띄움
-                items.$modiBtnInReadModal.on('click', () => {
+                items.$modiBtnInReadModal.on('click', (e) => {
+                    e.preventDefault()
+                    console.log("FOCUS!!!!!!!!!?????????????!!!!")
                     items.$passwordInputModal.modal('show');
-                    // 이거 동작하는지 확인하고, 확인 될때까지 주석 지우지 마
-                    // console.log("---focus확인")
-                    // items.$pwForAuthCheck.focus();
-                    // $("#pwForAuthCheck").focus();
                     items.$passwordModalTitle.html('수정하기');
+                    items.$pwForAuthCheck.focus();
                 })
 
                 // 조회화면의 삭제버튼 이벤트 > 클릭 시 비밀번호 입력 모달을 띄움
                 items.$deleteBtnInReadModal.on('click', () => {
                     items.$passwordInputModal.modal('show');
-                    // console.log("--밍")
-                    // items.$pwForAuthCheck.focus();
-                    // $("#pwForAuthCheck").focus();
                     items.$passwordModalTitle.html('삭제하기');
+                    items.$pwForAuthCheck.focus();
                 })
 
                 // 수정/삭제시 비밀번호 모달창에 입력한 비밀번호를 체크하는 function
@@ -820,7 +875,7 @@
                                 function success() {
                                     alert("삭제가 완료되었습니다.")
                                     $(".closeModal").click();
-                                    movePage(staticCurrPage, staticCurrSearchOption, staticCurrSearchKeyword);
+                                    movePage(1);
                                 }
                             }
                         }
@@ -832,27 +887,6 @@
                     }
                 })
 
-                function onfocus(failMSG, target) {
-                   if(target == 'regi') {
-                       if(failMSG.startsWith('제목')){
-                           $("#regiModal-title").focus();
-                       } else if(failMSG.startsWith('내용')){
-                           $("#regiModal-content").focus();
-                       } else if(failMSG.startsWith('작성자')){
-                           $("#regiModal-writer").focus();
-                       } else if(failMSG.startsWith('비밀번호')){
-                           $("#regiModal-password").focus();
-                       }
-                   }
-                else {
-                       if(failMSG.startsWith('제목')){
-                           $("#readModal-title").focus();
-                       } else if(failMSG.startsWith('내용')){
-                           $("#readModal-content").focus();
-                       }
-                }
-                }
-
                 // 게시글 조회창 닫을때
                 $(".closeModal").on("click", () => {
                     allFormsReset();
@@ -860,34 +894,40 @@
                 })
 
                 // (댓글) 최종 수정버튼 클릭시
-                $("#replyModiBtn").on('click', () => {
+                items.$replyModiBtn.on('click', () => {
                     console.log("수정-=----")
-                    let check = confirm("수정하시겠습니까?");
-                    if (check) {
-                        let replyObj = {
-                            'rno': staticSelectedReply,
-                            'writer': document.getElementById("readModal-reply-writer").value,
-                            'password': 'ENCODE',
-                            'content': document.getElementById("readModal-reply-content").value
-                        }
-                        ajaxService.putAjax(API_Server.commonURL + "reply", replyObj, success, fail)
+                    let resultObj = checkValid('reply','modi')
+                    if(!resultObj.status) {
+                        //유효성 통과 x
+                        alert(resultObj.faliMsg)
+                        document.getElementById(resultObj.focusTarget).focus();
+                    } else {
+                        let check = confirm("수정하시겠습니까?");
+                        if (check) {
+                            let replyObj = {
+                                'rno': staticSelectedReply,
+                                'writer': document.getElementById("readModal-reply-writer").value,
+                                'password': 'ENCODE',
+                                'content': document.getElementById("readModal-reply-content").value
+                            }
+                            ajaxService.putAjax(API_Server.commonURL + "reply", replyObj, success, fail)
 
-                        function success() {
-                            alert("댓글 수정이 완료되었습니다.")
-                            allFormsReset();
-                            read(staticSelectedBoard);
-                        }
+                            function success() {
+                                alert("댓글 수정이 완료되었습니다.")
+                                allFormsReset();
+                                read(staticSelectedBoard);
+                            }
 
-                        function fail(data) {
-                            alert(data.responseJSON.message);
+                            function fail(data) {
+                                console.log(data.responseJSON.message);
+                            }
                         }
                     }
                 })
 
                 // 글 수정
                 items.$finalUpdateBtnInReadModal.on('click', () => {
-                    console.log("수정수정")
-                    let check = confirm("수정하시겠습니까?");
+                   let check = confirm("수정하시겠습니까?");
                     if (check) {
                         let board = modalForm();
                         board.readFormObj.password = 'ENCODE'
@@ -898,13 +938,13 @@
                             alert("글 수정이 완료되었습니다.")
                             allFormsReset();
                             read(staticSelectedBoard);
+                            // or replacewith
                             $uploadDivforModi.html($cloneObjforModi.html());
+                            // $uploadDivforModi.html($cloneObjforModi.html());
                         }
 
                         function fail(data) {
-                            let failMSG = data.responseJSON.message;
-                            alert(failMSG);
-                            onfocus(failMSG, 'read')
+                            console.log(data.responseJSON.message);
                         }
                     }
                 })
@@ -915,14 +955,23 @@
                     let searchForm = document.getElementsByName('searchForm')
                     let category = '';
                     let nothing = true;
+                    let keywordInput = document.getElementById('searchKeyword')
+
+                    if(keywordInput.value == "" || keywordInput.value == null ) {
+                        alert("검색 키워드를 입력하세요.")
+                        keywordInput.focus();
+                        return;
+                    }
+
                     for (let i = 0; i < searchForm.length; i++) {
                         if (searchForm[i].checked == true) {
                             category += searchForm[i].value;
                             nothing = false;
                         }
                     }
+
                     if(nothing) {
-                        alert("검색 키워드를 선택해주세요.")
+                        alert("검색 유형을 선택해주세요.")
                         $("#searchKeyword").focus();
                         return;
                     }
@@ -947,19 +996,25 @@
 
                 // 댓글 등록 버튼 이벤트
                 $("#replyRegiBtn").on("click", () => {
+                    let resultObj = checkValid('reply','regi')
+                    if(!resultObj.status) {
+                        // 유효성 통과 못한경우
+                        alert(resultObj.faliMsg);
+                        document.getElementById(resultObj.focusTarget).focus();
+                    } else {
+                        let board = modalForm();
+                        ajaxService.postAjax(API_Server.commonURL + "reply", board.replyFormObj, success, fail)
 
-                    let board = modalForm();
-                    ajaxService.postAjax(API_Server.commonURL + "reply", board.replyFormObj, success, fail)
+                        function success(data) {
+                            console.log(data)
+                            alert("댓글 등록이 완료되었습니다.")
+                            allFormsReset()
+                            read(staticSelectedBoard);
+                        }
 
-                    function success(data) {
-                        console.log(data)
-                        alert("댓글 등록이 완료되었습니다.")
-                        allFormsReset()
-                        read(staticSelectedBoard);
-                    }
-
-                    function fail(data) {
-                        alert(data.responseJSON.message)
+                        function fail(data) {
+                            console.log(data.responseJSON.message)
+                        }
                     }
                 })
 
@@ -968,20 +1023,18 @@
                     items.$passwordInputModal.modal('hide');
                 })
 
-
-                // 첨부파일 감지하여 썸네일 생성
-                $("input[name='uploadFile']").on('change', (e) => {
+                // $("input[name='uploadFile'], #uploadDivforModi").on('change', function(e) {
+                $(".uploadDiv, #uploadDivforModi").on('change', function(e) {
                     let formData = new FormData();
                     let $inputFile = $(e.target);
                     let files = $inputFile[0].files;
-                    console.log(files)
+
                     for(let i=0;i<files.length;i++) {
                         // 기존이랑 같은파일 첨부하면 에러띄우기(==========추가할것)
-                        // 파일 확장자 체크해서 exe 등 첨부 못하게
-                        console.log("췀부파일 정보 확인")
-                        console.log(files[i])
                         if(validateFile(files[i].name,files[i].size)){
                             formData.append("uploadFile",files[i]);
+                        } else {
+                            console.log("유효XXXXXXXXXXXXXXXXXXXXXXXX")
                         }
                         //finalFileFormData.append(files[i].name,files[i]);
                     }
@@ -993,11 +1046,9 @@
                         data : formData,
                         type:'POST',
                         success: function(data) {
-                            console.log("성공")
-                            console.log(data)
                             console.log($inputFile.parent().siblings().find('ul'))
-                             // var $uploadDiv = $(".uploadDiv");
-                             // var $cloneObj =  $uploadDiv.clone();
+                            // var $uploadDiv = $(".uploadDiv");
+                            // var $cloneObj =  $uploadDiv.clone();
                             let attachListBox = $inputFile.parent().siblings().find('ul');
 
                             data.forEach(file => {
@@ -1034,7 +1085,84 @@
                             // })
                         }
                     })
-                })
+                });
+
+                function checkValid(targetObj, regiOrModi){
+
+                    let titleMsg = "제목은 1자 이상 30자 이하로 입력하세요."+"\n";
+                    let writerMsg = "작성자명은 1자 이상 10자 이하로 입력하세요."+"\n";
+                    let passwordMsg = "비밀번호는 4자 이상 12자 미만으로 설정하세요."+"\n";
+                    let contentMsg = "내용은 1자 이상 2000자 이하로 입력하세요."+"\n";
+                    let contentMsgForReply = "내용은 1자 이상 500자 이하로 입력하세요.";
+                    let focusTarget = new Array();
+                    let failMsg = "";
+                    let resultObj = {
+                        'status' : true,
+                        'faliMsg' : "",
+                        'focusTarget' : ""
+                    }
+
+                    if(targetObj == 'board') {
+                        if(regiOrModi == 'regi') {
+                            // 등록
+                            if (items.$regiTitle.val() == "" || items.$regiTitle.val().length > 30) {
+                                failMsg += titleMsg;
+                                focusTarget.push('regiModal-title')
+                            } if (items.$regiWriter.val() == "" || items.$regiWriter.val().length > 10) {
+                                failMsg += writerMsg;
+                                focusTarget.push('regiModal-writer')
+                            } if (items.$regiPassword.val() == "" || items.$regiPassword.val().length > 12 || items.$regiPassword.val().length < 4) {
+                                failMsg += passwordMsg;
+                                focusTarget.push('regiModal-password')
+                            } if (items.$regiContent.val() == "" || items.$regiContent.val().length > 2000) {
+                                failMsg += contentMsg;
+                                focusTarget.push('regiModal-content')
+                            }
+                        } else {
+                            // 수정
+                            if(items.$regiTitle.val() == "" || items.$regiTitle.val().length >30) {
+                                failMsg += titleMsg;
+                                focusTarget.push('regiModal-title')
+                            } if(items.$regiContent.val() == "" || items.$regiContent.val().length > 2000 ){
+                                failMsg += contentMsg;
+                                focusTarget.push('regiModal-content')
+                            }
+                        }
+                    } else { // 댓글
+                        if(regiOrModi == 'regi') {
+                            // 등록
+                            if(items.$replyWriter.val() == "" || items.$replyWriter.val().length >10 ) {
+                                failMsg += writerMsg;
+                                focusTarget.push('readModal-reply-writer')
+                            } if(items.$replyPassword.val() == "" || items.$replyPassword.val().length > 12 || items.$replyPassword.val().length < 4) {
+                                failMsg += passwordMsg;
+                                focusTarget.push('readModal-reply-password')
+                            } if(items.$replyContent.val() == "" ||items.$replyContent.val().length > 500) {
+                                failMsg += contentMsgForReply;
+                                focusTarget.push('readModal-reply-content')
+                            }
+                        } else {
+                            // 수정
+                            if(items.$replyContent.val() == "" ||items.$replyContent.val().length > 500) {
+                                failMsg += contentMsgForReply;
+                                focusTarget.push('readModal-reply-content')
+                            }
+                        }
+                    }
+
+
+                    if(focusTarget.length == 0) {
+                        return resultObj;
+                    } else {
+                        resultObj.faliMsg = failMsg;
+                        resultObj.status = false;
+                        focusTarget.some(target=> {
+                            resultObj.focusTarget = target;
+                            return true;
+                        })
+                    }
+                    return resultObj;
+                }
 
             }) // end of onready
         </script>
