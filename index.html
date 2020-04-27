@@ -372,10 +372,15 @@
                     }
                 }
 
+                console.log("----before ajax")
 
                 ajaxService.getAjax(API_Server.commonURL + "list", pageInfoObj, success)
 
+                console.log("----after ajax")
+
                 function success(data) {
+                    console.log("-----왜!!!!!!!")
+                    console.log(data)
                     if (data.total == 0) {
                         alert("검색 결과가 없습니다.")
                         return;
@@ -452,6 +457,8 @@
                 ajaxService.getAjax(API_Server.commonURL + "list", pageInfoObj, success)
 
                 function success(data) {
+                    console.log("--after firstloading")
+                    console.log(data)
                     items = item();
                     staticCurrPage = 1;
                     items.$tbody.html(makeBoardListTag(data));
